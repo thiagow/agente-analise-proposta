@@ -266,38 +266,41 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
                       {new Date(lead.criadoEm).toLocaleDateString("pt-BR")}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => verConversa(lead)}
-                          disabled={loadingConversa === lead.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-hive-surface-2 border border-hive-border text-hive-text text-xs hover:border-hive-purple/50 transition disabled:opacity-50"
-                        >
-                          {loadingConversa === lead.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Eye className="w-3.5 h-3.5" />
-                          )}
-                          Conversa
-                        </button>
-                        <button
-                          onClick={() => gerarProposta(lead)}
-                          disabled={loadingProposta === lead.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg gradient-brand text-white text-xs hover:brightness-110 transition disabled:opacity-50"
-                        >
-                          {loadingProposta === lead.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Sparkles className="w-3.5 h-3.5" />
-                          )}
-                          Proposta
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(lead)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs hover:bg-red-500/20 transition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Excluir
-                        </button>
+                      <div className="flex items-center gap-1">
+                        <Tooltip label="Ver conversa">
+                          <button
+                            onClick={() => verConversa(lead)}
+                            disabled={loadingConversa === lead.id}
+                            className="p-2 rounded-lg bg-hive-surface-2 border border-hive-border text-hive-muted hover:text-hive-text hover:border-hive-purple/50 transition disabled:opacity-50"
+                          >
+                            {loadingConversa === lead.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Gerar proposta">
+                          <button
+                            onClick={() => gerarProposta(lead)}
+                            disabled={loadingProposta === lead.id}
+                            className="p-2 rounded-lg bg-hive-purple/10 border border-hive-purple/20 text-hive-purple hover:bg-hive-purple/20 transition disabled:opacity-50"
+                          >
+                            {loadingProposta === lead.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-4 h-4" />
+                            )}
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Excluir lead">
+                          <button
+                            onClick={() => setConfirmDelete(lead)}
+                            className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                       </div>
                     </td>
                   </tr>
@@ -561,6 +564,19 @@ function PromptsTab() {
         })}
       </div>
     </>
+  );
+}
+
+// ─── Tooltip ───────────────────────────────────────────────────────────────────
+
+function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="relative group">
+      {children}
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded-md bg-hive-text text-hive-bg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-10">
+        {label}
+      </div>
+    </div>
   );
 }
 
