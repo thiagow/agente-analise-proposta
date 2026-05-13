@@ -13,6 +13,7 @@ import {
   MessageSquareDiff,
   Save,
   LogOut,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -133,7 +134,8 @@ export function AdminClient({ leads }: { leads: LeadRow[] }) {
 
 // ─── Leads Tab ─────────────────────────────────────────────────────────────────
 
-function LeadsTab({ leads }: { leads: LeadRow[] }) {
+function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
+  const [localLeads, setLocalLeads] = useState<LeadRow[]>(initialLeads);
   const [conversaModal, setConversaModal] = useState<{
     lead: LeadRow;
     messages: Message[];
@@ -142,8 +144,10 @@ function LeadsTab({ leads }: { leads: LeadRow[] }) {
     lead: LeadRow;
     proposta: string;
   } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<LeadRow | null>(null);
   const [loadingConversa, setLoadingConversa] = useState<number | null>(null);
   const [loadingProposta, setLoadingProposta] = useState<number | null>(null);
+  const [loadingDelete, setLoadingDelete] = useState(false);
   const [copied, setCopied] = useState(false);
 
   async function verConversa(lead: LeadRow) {
@@ -184,6 +188,20 @@ function LeadsTab({ leads }: { leads: LeadRow[] }) {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function excluirLead(lead: LeadRow) {
+    setLoadingDelete(true);
+    try {
+      const res = await fetch(`/api/admin/leads/${lead.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setLocalLeads((prev) => prev.filter((l) => l.id !== lead.id));
+      setConfirmDelete(null);
+    } catch {
+      alert("Erro ao excluir lead. Tente novamente.");
+    } finally {
+      setLoadingDelete(false);
+    }
+  }
+
   return (
     <>
       <div className="mb-8">
@@ -191,7 +209,7 @@ function LeadsTab({ leads }: { leads: LeadRow[] }) {
         <p className="text-hive-muted text-sm">Gerencie leads e gere propostas comerciais</p>
       </div>
 
-      {leads.length === 0 ? (
+      {localLeads.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Users className="w-12 h-12 text-hive-muted mb-4" />
           <p className="text-hive-muted">Nenhum lead cadastrado ainda.</p>
@@ -215,7 +233,7 @@ function LeadsTab({ leads }: { leads: LeadRow[] }) {
                 </tr>
               </thead>
               <tbody>
-                {leads.map((lead, i) => (
+                {localLeads.map((lead, i) => (
                   <tr
                     key={lead.id}
                     className={cn(
@@ -273,6 +291,13 @@ function LeadsTab({ leads }: { leads: LeadRow[] }) {
                           )}
                           Proposta
                         </button>
+                        <button
+                          onClick={() => setConfirmDelete(lead)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs hover:bg-red-500/20 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Excluir
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -281,6 +306,55 @@ function LeadsTab({ leads }: { leads: LeadRow[] }) {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {confirmDelete && (
+        <Modal onClose={() => !loadingDelete && setConfirmDelete(null)}>
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-hive-text">Excluir lead</h2>
+                <p className="text-sm text-hive-muted">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setConfirmDelete(null)}
+              disabled={loadingDelete}
+              className="p-2 rounded-lg hover:bg-hive-surface-2 text-hive-muted transition disabled:opacity-50"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-sm text-hive-text mb-6">
+            Tem certeza que deseja excluir o lead{" "}
+            <span className="font-semibold">{confirmDelete.nome}</span>? Toda a conversa, arquivos e propostas vinculados serão removidos permanentemente.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setConfirmDelete(null)}
+              disabled={loadingDelete}
+              className="flex-1 py-2.5 rounded-xl bg-hive-surface-2 border border-hive-border text-hive-text text-sm font-medium hover:border-hive-purple/50 transition disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => excluirLead(confirmDelete)}
+              disabled={loadingDelete}
+              className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loadingDelete ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              Excluir lead
+            </button>
+          </div>
+        </Modal>
       )}
 
       {/* Conversa Modal */}
