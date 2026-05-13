@@ -76,18 +76,21 @@ export function AdminClient({ leads }: { leads: LeadRow[] }) {
     <div className="min-h-screen bg-hive-bg">
       {/* Header */}
       <header className="border-b border-hive-border px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/logo.png"
-              alt="Tech Hive"
-              width={40}
-              height={40}
-              priority
-              className="h-10 w-auto"
-            />
-          </Link>
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-3 items-center">
+          <div />
+          <div className="flex justify-center">
+            <Link href="/">
+              <Image
+                src="/logo.png"
+                alt="Tech Hive"
+                width={160}
+                height={40}
+                priority
+                className="h-10 w-auto"
+              />
+            </Link>
+          </div>
+          <div className="flex items-center justify-end gap-4">
             <div className="flex items-center gap-2 text-hive-muted text-sm">
               <Users className="w-4 h-4" />
               {leads.length} lead{leads.length !== 1 ? "s" : ""}
