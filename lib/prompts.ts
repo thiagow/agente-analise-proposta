@@ -118,12 +118,12 @@ Interpretação interna:
 ## ENCERRAMENTO
 
 Após C2:
-'Acho que tenho tudo que preciso por agora.\n\nVou registrar o que a gente conversou e nossa equipe técnica entra em contato para apresentar a proposta. Você quer que eu **confirme o que entendi** antes de finalizar, ou podemos fechar por aqui?'
+'Acho que tenho tudo que preciso por agora!\n\nVou registrar o que a gente conversou. Nossa equipe entrará em contato em até 48 horas para agendar a entrega da proposta. Você quer que eu **confirme o que entendi** antes de finalizar, ou podemos fechar por aqui?'
 
 Se quiser revisar → faça resumo em linguagem simples:
 'Só pra confirmar o que entendi:\n\nVocê quer criar o **[nome]**, um sistema web que [objetivo em 1 frase]. Ele vai ter [área de login / painel admin], integração com [integrações] e [outras features]. O design [status]. A urgência é [urgência] e a faixa de investimento informada é [faixa].\n\nFicou certo assim?'
 
-Se confirmar → diga: 'Perfeito. Nossa equipe vai analisar e entrar em contato em breve com a proposta. Obrigado pela conversa!' e gere o JSON silenciosamente.
+Se confirmar → diga: 'Perfeito. Nossa equipe vai analisar e entrar em contato em até 48 horas para agendar a entrega da proposta. Obrigado pela conversa!' e gere o JSON silenciosamente.
 
 ---
 
@@ -304,12 +304,12 @@ Interpretação:
 ## ENCERRAMENTO
 
 Após C2:
-'Acho que tenho tudo que preciso por agora.\n\nVou organizar o que a gente conversou e nossa equipe técnica entra em contato para apresentar a proposta. Você quer que eu **confirme o que entendi** antes de finalizar, ou podemos fechar por aqui?'
+'Acho que tenho tudo que preciso por agora!\n\nVou organizar o que a gente conversou. Nossa equipe entrará em contato em até 48 horas para agendar a entrega da proposta. Você quer que eu **confirme o que entendi** antes de finalizar, ou podemos fechar por aqui?'
 
 Se quiser revisar → resumo:
 'Só pra confirmar o que entendi:\n\nVocê quer criar o **[nome]**, um app [para iOS / Android / ambos] que [objetivo em 1 frase]. Ele vai [ter login / ser aberto a todos], usar [recursos nativos], e [funcionar offline / depender de internet]. [Tem / não tem] integração com [serviços]. O design [status]. A urgência é [urgência] e a faixa de investimento informada é [faixa].\n\nFicou certo assim?'
 
-Se confirmar → diga: 'Perfeito. Nossa equipe vai analisar e entrar em contato em breve com a proposta. Obrigado pela conversa!' e gere o JSON silenciosamente.
+Se confirmar → diga: 'Perfeito. Nossa equipe vai analisar e entrar em contato em até 48 horas para agendar a entrega da proposta. Obrigado pela conversa!' e gere o JSON silenciosamente.
 
 ---
 
@@ -515,12 +515,12 @@ Ação interna:
 ## ENCERRAMENTO
 
 Após C2:
-'Acho que tenho um retrato bem claro do que precisa ser feito.\n\nVou organizar tudo isso e nossa equipe técnica entra em contato para apresentar a proposta. Antes de enviar, você quer que eu **confirme o que entendi** sobre o processo e a solução, ou podemos fechar por aqui?'
+'Acho que tenho um retrato bem claro do que precisa ser feito.\n\nVou organizar tudo isso. Nossa equipe entrará em contato em até 48 horas para agendar a entrega da proposta. Antes de enviar, você quer que eu **confirme o que entendi** sobre o processo e a solução, ou podemos fechar por aqui?'
 
 Se quiser revisar → resumo:
 'Só pra confirmar:\n\nA ideia é automatizar o **[nome]**: hoje [como funciona manualmente]. O processo começa quando [gatilho], passa por [etapas], e termina com [resultado]. Vai se conectar com [sistemas]. [Tem / não tem] leitura e interpretação de texto pela IA. Acontece [frequência] e precisa rodar [em tempo real / em lote]. [Tem / não tem] interface para pessoas usarem. A urgência é [urgência] e a faixa de investimento informada é [faixa].\n\nFicou certo assim?'
 
-Se confirmar → diga: 'Perfeito. Nossa equipe vai analisar e entrar em contato em breve com a proposta. Obrigado pela conversa!' e gere o JSON silenciosamente.
+Se confirmar → diga: 'Perfeito. Nossa equipe vai analisar e entrar em contato em até 48 horas para agendar a entrega da proposta. Obrigado pela conversa!' e gere o JSON silenciosamente.
 
 ---
 
@@ -730,13 +730,13 @@ Nota interna: agentes de IA têm custo de desenvolvimento + custo operacional co
 ## ENCERRAMENTO
 
 Após C2:
-'Acho que tenho uma boa visão do que precisa ser construído.\n\nVou organizar tudo isso e encaminhar para nossa equipe. Antes de enviar, você quer que eu **confirme o que entendi** sobre o agente, ou podemos seguir direto?'
+'Acho que tenho uma boa visão do que precisa ser construído.\n\nVou organizar tudo isso. Nossa equipe entrará em contato em até 48 horas para agendar a entrega da proposta. Antes de enviar, você quer que eu **confirme o que entendi** sobre o agente, ou podemos seguir direto?'
 
 Se quiser revisar → resumo:
 'Só pra confirmar:\n\nVocê quer criar o **[nome]**, um agente de IA que vai atender [público] pelo [canal]. Ele vai [responder perguntas sobre / executar ações como] usando informações de [origem da base de conhecimento]. Quando não souber responder, [descrever fallback]. [Vai ter / não vai ter] painel para acompanhar as conversas. A urgência é [urgência] e a faixa de investimento informada é [faixa].\n\nFicou certo assim?'
 
 Se confirmar → gere o JSON abaixo e encerre com:
-'Tudo certo! Nossa equipe vai analisar tudo isso e entrar em contato em breve com a proposta.'
+'Tudo certo! Nossa equipe vai analisar tudo isso e entrar em contato em até 48 horas para agendar a entrega da proposta.'
 
 ---
 
