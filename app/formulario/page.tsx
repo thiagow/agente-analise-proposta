@@ -76,16 +76,16 @@ export default function FormularioPage() {
   return (
     <main className="min-h-screen bg-hive-bg">
       {/* Header */}
-      <header className="border-b border-hive-border px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-3">
+      <header className="border-b border-hive-border px-6 py-5">
+        <div className="max-w-6xl mx-auto flex justify-center">
+          <Link href="/">
             <Image
               src="/logo.png"
               alt="Tech Hive"
-              width={40}
-              height={40}
+              width={240}
+              height={60}
               priority
-              className="h-10 w-auto"
+              className="h-14 w-auto"
             />
           </Link>
         </div>

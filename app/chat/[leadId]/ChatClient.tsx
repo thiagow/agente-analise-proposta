@@ -132,18 +132,21 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
   return (
     <div className="flex flex-col h-screen bg-hive-bg">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-hive-border px-6 py-4">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/logo.png"
-              alt="Tech Hive"
-              width={40}
-              height={40}
-              priority
-              className="h-10 w-auto"
-            />
-          </Link>
+      <header className="flex-shrink-0 border-b border-hive-border px-6 py-5">
+        <div className="max-w-3xl mx-auto grid grid-cols-3 items-center">
+          <div />
+          <div className="flex justify-center">
+            <Link href="/">
+              <Image
+                src="/logo.png"
+                alt="Tech Hive"
+                width={240}
+                height={60}
+                priority
+                className="h-14 w-auto"
+              />
+            </Link>
+          </div>
           <div className="text-right">
             <p className="text-sm font-medium text-hive-text">{lead.nome}</p>
             {lead.empresa && (
