@@ -1,15 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 
-function isJsonSummary(text: string): boolean {
+interface ExtractionResult {
+  found: boolean;
+  closingText: string | null;
+}
+
+function extractClosingMessage(text: string): ExtractionResult {
   const trimmed = text.trim();
+
+  // Caso 1: resposta é puro JSON
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    try { JSON.parse(trimmed); return true; } catch { return false; }
+    try { JSON.parse(trimmed); return { found: true, closingText: null }; }
+    catch { /* continua */ }
   }
-  const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  if (match) {
-    try { JSON.parse(match[1]); return true; } catch { return false; }
+
+  // Caso 2: resposta é somente um bloco ```json ... ```
+  const pureBlock = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  if (pureBlock) {
+    try { JSON.parse(pureBlock[1]); return { found: true, closingText: null }; }
+    catch { /* continua */ }
   }
-  return false;
+
+  // Caso 3: texto + bloco ```json ... ``` ao final
+  const mixed = trimmed.match(/^([\s\S]*?)```(?:json)?\s*(\{[\s\S]*?\})\s*```\s*$/);
+  if (mixed) {
+    try {
+      JSON.parse(mixed[2]);
+      return { found: true, closingText: mixed[1].trim() || null };
+    }
+    catch { /* continua */ }
+  }
+
+  return { found: false, closingText: null };
 }
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -101,9 +123,13 @@ export async function POST(req: NextRequest) {
       { leadId, role: "assistant", conteudo: response },
     ]);
 
-    // Detect JSON summary — save to DB but hide from chat UI
-    if (isJsonSummary(response)) {
-      return NextResponse.json({ response: null, conversaEncerrada: true });
+    // Detect JSON summary — strip JSON from response and hide it from the chat UI
+    const detection = extractClosingMessage(response);
+    if (detection.found) {
+      return NextResponse.json({
+        response: detection.closingText,
+        conversaEncerrada: true,
+      });
     }
 
     return NextResponse.json({ response });

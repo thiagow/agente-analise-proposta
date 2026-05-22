@@ -97,6 +97,12 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
       }
 
       if (data.conversaEncerrada) {
+        if (data.response) {
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: data.response },
+          ]);
+        }
         setConversaEncerrada(true);
         return;
       }
