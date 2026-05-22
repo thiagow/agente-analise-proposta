@@ -13,7 +13,7 @@ export default function FormularioPage() {
 
   const [form, setForm] = useState({
     nome: "",
-    whatsapp: "",
+    whatsapp: "+55 ",
     email: "",
     cargo: "",
     empresa: "",
@@ -25,6 +25,20 @@ export default function FormularioPage() {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError("");
+  }
+
+  function handleWhatsappChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const digits = e.target.value.replace(/\D/g, "").slice(2);
+
+    let formatted = "+55 ";
+    if (digits.length > 0) formatted += "(" + digits.slice(0, 2);
+    if (digits.length >= 2) formatted += ") " + digits.slice(2, 7);
+    if (digits.length >= 7) formatted += "-" + digits.slice(7, 11);
+
+    if (digits.length <= 11) {
+      setForm((prev) => ({ ...prev, whatsapp: formatted }));
+    }
     setError("");
   }
 
@@ -42,6 +56,12 @@ export default function FormularioPage() {
 
     if (!form.nome.trim() || !form.whatsapp.trim() || !form.email.trim()) {
       setError("Nome, WhatsApp e e-mail são obrigatórios.");
+      return;
+    }
+
+    const whatsappDigits = form.whatsapp.replace(/\D/g, "").slice(2);
+    if (whatsappDigits.length !== 11) {
+      setError("WhatsApp inválido. Informe DDD + 9 dígitos: (11) 99999-9999.");
       return;
     }
 
@@ -124,8 +144,9 @@ export default function FormularioPage() {
               <input
                 name="whatsapp"
                 value={form.whatsapp}
-                onChange={handleChange}
-                placeholder="+55 11 99999-9999"
+                onChange={handleWhatsappChange}
+                placeholder="+55 (11) 99999-9999"
+                inputMode="numeric"
                 className="w-full px-4 py-3 rounded-xl bg-hive-surface border border-hive-border text-hive-text placeholder-hive-muted focus:outline-none focus:ring-2 focus:ring-hive-purple/50 focus:border-hive-purple transition"
               />
             </div>
