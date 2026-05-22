@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
     // Detect JSON summary — strip JSON from response and hide it from the chat UI
     const detection = extractClosingMessage(response);
     if (detection.found) {
+      await db.update(leads).set({ encerrada: true }).where(eq(leads.id, leadId));
       return NextResponse.json({
         response: detection.closingText,
         conversaEncerrada: true,

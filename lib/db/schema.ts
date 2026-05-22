@@ -4,6 +4,7 @@ import {
   varchar,
   text,
   integer,
+  boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
 
@@ -15,6 +16,7 @@ export const leads = pgTable("leads", {
   whatsapp: varchar("whatsapp", { length: 30 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
   tipoProjeto: varchar("tipo_projeto", { length: 50 }),
+  encerrada: boolean("encerrada").default(false).notNull(),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 

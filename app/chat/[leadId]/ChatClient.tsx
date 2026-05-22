@@ -29,25 +29,37 @@ const WELCOME = `Olá! Sou a IA da Tech Hive. Estou aqui para entender melhor o 
 
 Para começar, qual é o tipo de projeto que você tem em mente?`;
 
-function isJsonMessage(content: string): boolean {
+function extractClosingText(content: string): string | null {
   const trimmed = content.trim();
+
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    try { JSON.parse(trimmed); return true; } catch { return false; }
+    try { JSON.parse(trimmed); return null; } catch { /* continua */ }
   }
-  const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  if (match) {
-    try { JSON.parse(match[1]); return true; } catch { return false; }
+
+  const pureBlock = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  if (pureBlock) {
+    try { JSON.parse(pureBlock[1]); return null; } catch { /* continua */ }
   }
-  return false;
+
+  const mixed = trimmed.match(/^([\s\S]*?)```(?:json)?\s*(\{[\s\S]*?\})\s*```\s*$/);
+  if (mixed) {
+    try {
+      JSON.parse(mixed[2]);
+      return mixed[1].trim() || null;
+    } catch { /* continua */ }
+  }
+
+  return content;
 }
 
 export default function ChatClient({ lead, historicoInicial }: Props) {
-  const historicoFiltrado = historicoInicial.filter((m) => !isJsonMessage(m.content));
-  const encerradaNoHistorico = historicoInicial.length > historicoFiltrado.length;
+  const historicoProcessado = historicoInicial
+    .map((m) => ({ ...m, content: extractClosingText(m.content) }))
+    .filter((m): m is Message => m.content !== null);
 
   const [messages, setMessages] = useState<Message[]>(
-    historicoFiltrado.length > 0
-      ? historicoFiltrado
+    historicoProcessado.length > 0
+      ? historicoProcessado
       : [{ role: "assistant", content: WELCOME }]
   );
   const [input, setInput] = useState("");
@@ -58,7 +70,7 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
   const [projectSelected, setProjectSelected] = useState(
     historicoInicial.length > 0 || !!lead.tipoProjeto
   );
-  const [conversaEncerrada, setConversaEncerrada] = useState(encerradaNoHistorico);
+  const [conversaEncerrada, setConversaEncerrada] = useState(lead.encerrada);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -233,9 +245,15 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
       <div className="flex-shrink-0 border-t border-hive-border px-6 py-4">
         <div className="max-w-3xl mx-auto">
           {conversaEncerrada ? (
-            <div className="text-center py-3">
+            <div className="text-center py-4 space-y-2">
               <p className="text-sm text-hive-muted">
                 Conversa encerrada. Nossa equipe entrará em contato em breve com a proposta.
+              </p>
+              <p className="text-xs text-hive-muted">
+                Precisa de outro orçamento?{" "}
+                <Link href="/formulario" className="text-hive-purple hover:underline">
+                  Inicie uma nova conversa
+                </Link>
               </p>
             </div>
           ) : (
