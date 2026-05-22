@@ -32,7 +32,9 @@ export interface Message {
   content: string;
 }
 
-export async function chatCompletion(messages: Message[]): Promise<string> {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export async function chatCompletion(messages: Message[], retries = 3): Promise<string> {
   const config = PROVIDER_CONFIGS[PROVIDER];
   const model = process.env.AI_MODEL ?? config.defaultModel;
 
@@ -45,6 +47,17 @@ export async function chatCompletion(messages: Message[]): Promise<string> {
     },
     body: JSON.stringify({ model, messages }),
   });
+
+  if (res.status === 429 && retries > 0) {
+    let waitMs = 5000;
+    try {
+      const body = await res.clone().json();
+      const retryAfter = body?.error?.metadata?.retry_after_seconds;
+      if (typeof retryAfter === "number") waitMs = Math.ceil(retryAfter) * 1000 + 500;
+    } catch { /* usa default */ }
+    await sleep(waitMs);
+    return chatCompletion(messages, retries - 1);
+  }
 
   if (!res.ok) {
     const body = await res.text();
