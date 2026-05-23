@@ -251,16 +251,16 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
       <div className="flex-shrink-0 border-t border-hive-border px-6 py-4">
         <div className="max-w-3xl mx-auto">
           {conversaEncerrada ? (
-            <div className="text-center py-4 space-y-2">
+            <div className="text-center py-4 space-y-4">
               <p className="text-sm text-hive-muted">
                 Conversa encerrada. Nossa equipe entrará em contato em breve com a proposta.
               </p>
-              <p className="text-xs text-hive-muted">
-                Precisa de outro orçamento?{" "}
-                <Link href="/formulario" className="text-hive-purple hover:underline">
-                  Inicie uma nova conversa
-                </Link>
-              </p>
+              <Link
+                href="/formulario"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-brand text-white text-sm font-medium hover:brightness-110 transition"
+              >
+                Iniciar nova conversa
+              </Link>
             </div>
           ) : (
             <>
