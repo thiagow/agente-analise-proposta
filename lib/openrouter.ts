@@ -36,7 +36,7 @@ export interface Message {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function chatCompletion(messages: Message[]): Promise<string> {
+export async function chatCompletion(messages: Message[], maxTokens = 600): Promise<string> {
   const config = PROVIDER_CONFIGS[PROVIDER];
 
   const modelsEnv = process.env.AI_MODELS ?? process.env.AI_MODEL ?? config.defaultModel;
@@ -46,7 +46,7 @@ export async function chatCompletion(messages: Message[]): Promise<string> {
 
   for (const model of models) {
     try {
-      const content = await tryOnce(config, model, messages);
+      const content = await tryOnce(config, model, messages, maxTokens);
       if (content && content.trim().length > 0) {
         console.log(`[chatCompletion] usou modelo: ${model}`);
         return content;
@@ -67,7 +67,8 @@ export async function chatCompletion(messages: Message[]): Promise<string> {
 async function tryOnce(
   config: ProviderConfig,
   model: string,
-  messages: Message[]
+  messages: Message[],
+  maxTokens: number
 ): Promise<string | null> {
   const res = await fetch(config.baseUrl, {
     method: "POST",
@@ -76,7 +77,7 @@ async function tryOnce(
       Authorization: `Bearer ${config.apiKey()}`,
       ...config.extraHeaders,
     },
-    body: JSON.stringify({ model, messages, max_tokens: 600 }),
+    body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
   });
 
   if (res.status === 429) {
@@ -84,7 +85,7 @@ async function tryOnce(
     const retryAfter = body?.error?.metadata?.retry_after_seconds;
     if (typeof retryAfter === "number" && retryAfter <= 8) {
       await sleep(Math.ceil(retryAfter) * 1000 + 500);
-      return tryOnce(config, model, messages);
+      return tryOnce(config, model, messages, maxTokens);
     }
     throw new Error(`429 (retry ${retryAfter ?? "?"}s)`);
   }

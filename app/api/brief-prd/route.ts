@@ -49,34 +49,34 @@ Tipo de Projeto: ${lead.tipoProjeto || "Não informado"}
       .map((m) => `${m.role === "user" ? "Cliente" : "Tech Hive"}: ${m.conteudo}`)
       .join("\n\n");
 
-    const [dbPromptProposta] = await db
+    const [dbPrompt] = await db
       .select()
       .from(prompts)
-      .where(eq(prompts.tipo, "gerarProposta"))
+      .where(eq(prompts.tipo, "gerarBriefPRD"))
       .limit(1);
-    const promptProposta = dbPromptProposta?.conteudo ?? SYSTEM_PROMPTS.gerarProposta;
+    const systemPrompt = dbPrompt?.conteudo ?? SYSTEM_PROMPTS.gerarBriefPRD;
 
     const messages: Message[] = [
-      { role: "system", content: promptProposta },
+      { role: "system", content: systemPrompt },
       {
         role: "user",
         content: `Informações do Lead:\n${leadInfo}\n\n${
           arquivo?.textoExtraido
             ? `Documentação fornecida:\n${arquivo.textoExtraido}\n\n`
             : ""
-        }Histórico de conversa:\n${conversaFormatada}\n\nGere a proposta comercial completa em JSON.`,
+        }Histórico de conversa:\n${conversaFormatada}\n\nGere o Brief PRD completo em Markdown.`,
       },
     ];
 
-    const promptGerado = await chatCompletion(messages);
+    const briefGerado = await chatCompletion(messages, 4000);
 
-    await db.insert(propostas).values({ leadId, promptGerado });
+    await db.insert(propostas).values({ leadId, promptGerado: briefGerado });
 
-    return NextResponse.json({ promptGerado });
+    return NextResponse.json({ promptGerado: briefGerado });
   } catch (err) {
-    console.error("[POST /api/proposta]", err);
+    console.error("[POST /api/brief-prd]", err);
     return NextResponse.json(
-      { error: "Erro ao gerar proposta" },
+      { error: "Erro ao gerar Brief PRD" },
       { status: 500 }
     );
   }

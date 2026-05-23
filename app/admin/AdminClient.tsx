@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   FileText,
   Eye,
-  Sparkles,
   Copy,
   Check,
   X,
@@ -51,7 +50,7 @@ const TIPO_LABELS: Record<string, string> = {
   mobileApp: "📱 Mobile App",
   automacao: "🤖 Automação com IA",
   agente: "💬 Agente de IA",
-  gerarProposta: "📄 Gerar Proposta",
+  gerarBriefPRD: "📄 Gerar Brief PRD",
 };
 
 // ─── Admin Root ────────────────────────────────────────────────────────────────
@@ -166,7 +165,7 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
   async function gerarProposta(lead: LeadRow) {
     setLoadingProposta(lead.id);
     try {
-      const res = await fetch("/api/proposta", {
+      const res = await fetch("/api/brief-prd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leadId: lead.id }),
@@ -175,7 +174,7 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
       if (!res.ok) throw new Error(data.error);
       setPropostaModal({ lead, proposta: data.promptGerado });
     } catch (e) {
-      alert(`Erro ao gerar proposta: ${e instanceof Error ? e.message : "Tente novamente."}`);
+      alert(`Erro ao gerar Brief PRD: ${e instanceof Error ? e.message : "Tente novamente."}`);
     } finally {
       setLoadingProposta(null);
     }
@@ -206,7 +205,7 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
     <>
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-hive-text mb-1">Painel de Leads</h1>
-        <p className="text-hive-muted text-sm">Gerencie leads e gere propostas comerciais</p>
+        <p className="text-hive-muted text-sm">Gerencie leads e gere documentos de briefing para PRD</p>
       </div>
 
       {localLeads.length === 0 ? (
@@ -280,7 +279,7 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
                             )}
                           </button>
                         </Tooltip>
-                        <Tooltip label="Gerar proposta">
+                        <Tooltip label="Gerar Brief PRD">
                           <button
                             onClick={() => gerarProposta(lead)}
                             disabled={loadingProposta === lead.id}
@@ -289,7 +288,7 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
                             {loadingProposta === lead.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                              <Sparkles className="w-4 h-4" />
+                              <FileText className="w-4 h-4" />
                             )}
                           </button>
                         </Tooltip>
@@ -403,8 +402,8 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
         <Modal onClose={() => setPropostaModal(null)}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-hive-text">Proposta — {propostaModal.lead.nome}</h2>
-              <p className="text-sm text-hive-muted">Gerada pela IA</p>
+              <h2 className="text-lg font-semibold text-hive-text">Brief PRD — {propostaModal.lead.nome}</h2>
+              <p className="text-sm text-hive-muted">Use este documento como input para o agente de PRD</p>
             </div>
             <button
               onClick={() => setPropostaModal(null)}
@@ -425,7 +424,7 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
             {copied ? (
               <><Check className="w-4 h-4" />Copiado!</>
             ) : (
-              <><Copy className="w-4 h-4" />Copiar Proposta</>
+              <><Copy className="w-4 h-4" />Copiar Brief PRD</>
             )}
           </button>
         </Modal>
