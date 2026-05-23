@@ -76,7 +76,7 @@ async function tryOnce(
       Authorization: `Bearer ${config.apiKey()}`,
       ...config.extraHeaders,
     },
-    body: JSON.stringify({ model, messages, max_tokens: 2000 }),
+    body: JSON.stringify({ model, messages, max_tokens: 600 }),
   });
 
   if (res.status === 429) {
