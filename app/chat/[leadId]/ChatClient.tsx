@@ -186,8 +186,14 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
               )}
             >
               {msg.role === "assistant" && (
-                <div className="w-7 h-7 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0 mr-3 mt-0.5">
-                  <Star className="w-3.5 h-3.5 text-white fill-white" />
+                <div className="w-7 h-7 rounded-lg flex-shrink-0 mr-3 mt-0.5 overflow-hidden">
+                  <Image
+                    src="/foto-perfil-agente.jpg"
+                    alt="Tech Hive Agent"
+                    width={28}
+                    height={28}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               )}
               <div
