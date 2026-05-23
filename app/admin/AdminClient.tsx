@@ -170,6 +170,16 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leadId: lead.id }),
       });
+
+      const contentType = res.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          res.status === 502 || res.status === 504
+            ? "Tempo limite excedido. O modelo demorou muito para responder. Tente novamente."
+            : `Erro no servidor (${res.status}). Tente novamente.`
+        );
+      }
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setPropostaModal({ lead, proposta: data.promptGerado });

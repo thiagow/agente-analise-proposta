@@ -5,6 +5,8 @@ import { leads, mensagens, arquivos, propostas, prompts } from "@/lib/db/schema"
 import { chatCompletion, type Message } from "@/lib/openrouter";
 import { SYSTEM_PROMPTS } from "@/lib/prompts";
 
+export const maxDuration = 26;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
