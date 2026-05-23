@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { leads, mensagens, arquivos, propostas, prompts } from "@/lib/db/schema";
-import { chatCompletion, type Message } from "@/lib/openrouter";
+import { chatCompletionWith, type Message } from "@/lib/openrouter";
 import { SYSTEM_PROMPTS } from "@/lib/prompts";
 
 export const maxDuration = 26;
@@ -70,7 +70,7 @@ Tipo de Projeto: ${lead.tipoProjeto || "Não informado"}
       },
     ];
 
-    const briefGerado = await chatCompletion(messages, 4000);
+    const briefGerado = await chatCompletionWith("openai", messages, 4000);
 
     await db.insert(propostas).values({ leadId, promptGerado: briefGerado });
 

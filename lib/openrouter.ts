@@ -64,6 +64,18 @@ export async function chatCompletion(messages: Message[], maxTokens = 600): Prom
   throw lastError ?? new Error("Nenhum modelo respondeu");
 }
 
+export async function chatCompletionWith(
+  provider: keyof typeof PROVIDER_CONFIGS,
+  messages: Message[],
+  maxTokens = 600
+): Promise<string> {
+  const config = PROVIDER_CONFIGS[provider];
+  const content = await tryOnce(config, config.defaultModel, messages, maxTokens);
+  if (!content?.trim()) throw new Error("Resposta vazia do modelo");
+  console.log(`[chatCompletionWith] provider: ${provider}, model: ${config.defaultModel}`);
+  return content;
+}
+
 async function tryOnce(
   config: ProviderConfig,
   model: string,
