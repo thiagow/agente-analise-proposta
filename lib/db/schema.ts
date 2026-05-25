@@ -6,6 +6,7 @@ import {
   integer,
   boolean,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const leads = pgTable("leads", {
@@ -17,6 +18,7 @@ export const leads = pgTable("leads", {
   email: varchar("email", { length: 255 }).notNull(),
   tipoProjeto: varchar("tipo_projeto", { length: 50 }),
   encerrada: boolean("encerrada").default(false).notNull(),
+  jsonQualificacao: jsonb("json_qualificacao"),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 

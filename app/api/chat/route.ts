@@ -1,43 +1,84 @@
 import { NextRequest, NextResponse } from "next/server";
-
-interface ExtractionResult {
-  found: boolean;
-  closingText: string | null;
-}
-
-function extractClosingMessage(text: string): ExtractionResult {
-  const trimmed = text.trim();
-
-  // Caso 1: resposta é puro JSON
-  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    try { JSON.parse(trimmed); return { found: true, closingText: null }; }
-    catch { /* continua */ }
-  }
-
-  // Caso 2: resposta é somente um bloco ```json ... ```
-  const pureBlock = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  if (pureBlock) {
-    try { JSON.parse(pureBlock[1]); return { found: true, closingText: null }; }
-    catch { /* continua */ }
-  }
-
-  // Caso 3: texto + bloco ```json ... ``` ao final
-  const mixed = trimmed.match(/^([\s\S]*?)```(?:json)?\s*(\{[\s\S]*?\})\s*```\s*$/);
-  if (mixed) {
-    try {
-      JSON.parse(mixed[2]);
-      return { found: true, closingText: mixed[1].trim() || null };
-    }
-    catch { /* continua */ }
-  }
-
-  return { found: false, closingText: null };
-}
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { leads, mensagens, arquivos, prompts } from "@/lib/db/schema";
-import { chatCompletion, type Message } from "@/lib/openrouter";
+import { chatCompletionRich, type Message } from "@/lib/openrouter";
 import { SYSTEM_PROMPTS, type ProjectType } from "@/lib/prompts";
+import { TOOLS, TOOL_NAME } from "@/lib/tools";
+
+interface ExtractionResult {
+  cleanedContent: string;
+  extractedJson: Record<string, unknown> | null;
+}
+
+// Camada B — defesa em profundidade contra o modelo escorregar e emitir JSON em texto.
+// Hoje a coleta estruturada é via tool calling (Camada A), mas esse parser limpa qualquer
+// resíduo caso o modelo viole a regra.
+function sanitizeAssistantContent(text: string): ExtractionResult {
+  const trimmed = text.trim();
+  if (!trimmed) return { cleanedContent: "", extractedJson: null };
+
+  const tryParse = (raw: string): Record<string, unknown> | null => {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      /* noop */
+    }
+    return null;
+  };
+
+  // 1. Resposta inteira é JSON puro
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    const parsed = tryParse(trimmed);
+    if (parsed) return { cleanedContent: "", extractedJson: parsed };
+  }
+
+  // 2. Apenas um bloco ```json ... ```
+  const pureBlock = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  if (pureBlock) {
+    const parsed = tryParse(pureBlock[1]);
+    if (parsed) return { cleanedContent: "", extractedJson: parsed };
+  }
+
+  // 3. Texto + bloco ```json ... ``` ao final
+  const mixed = trimmed.match(/^([\s\S]*?)```(?:json)?\s*(\{[\s\S]*?\})\s*```\s*$/);
+  if (mixed) {
+    const parsed = tryParse(mixed[2]);
+    if (parsed) {
+      return { cleanedContent: mixed[1].trim(), extractedJson: parsed };
+    }
+  }
+
+  // 4. Heurística agressiva: localizar o último bloco { ... } no fim do texto
+  //    e tentar parsear progressivamente (lida com JSON inline sem bloco markdown).
+  const lastBraceStart = trimmed.lastIndexOf("{");
+  if (lastBraceStart >= 0) {
+    const tail = trimmed.slice(lastBraceStart);
+    if (tail.trim().endsWith("}")) {
+      const parsed = tryParse(tail);
+      if (parsed && looksLikeQualification(parsed)) {
+        const head = trimmed.slice(0, lastBraceStart).trim();
+        return { cleanedContent: head, extractedJson: parsed };
+      }
+    }
+  }
+
+  return { cleanedContent: trimmed, extractedJson: null };
+}
+
+function looksLikeQualification(obj: Record<string, unknown>): boolean {
+  // Campos que aparecem em qualquer um dos 4 schemas de qualificação
+  return (
+    "tipo" in obj ||
+    "projeto" in obj ||
+    "project_name" in obj ||
+    "objetivo" in obj ||
+    "features_mvp" in obj
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,7 +106,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Lead não encontrado" }, { status: 404 });
     }
 
-    // Update tipoProjeto if provided for the first time
     if (tipoProjeto && !lead.tipoProjeto) {
       await db
         .update(leads)
@@ -83,14 +123,12 @@ export async function POST(req: NextRequest) {
       .limit(1);
     const systemPrompt = dbPrompt?.conteudo ?? SYSTEM_PROMPTS[tipoFinal];
 
-    // Fetch PDF context if available
     const [arquivo] = await db
       .select()
       .from(arquivos)
       .where(eq(arquivos.leadId, leadId))
       .limit(1);
 
-    // Fetch conversation history
     const historico = await db
       .select()
       .from(mensagens)
@@ -115,25 +153,54 @@ export async function POST(req: NextRequest) {
 
     messages.push({ role: "user", content: message.trim() });
 
-    const response = await chatCompletion(messages);
+    const tools = TOOLS[tipoFinal];
+    const completion = await chatCompletionRich(messages, { tools });
 
-    // Persist both turns
+    const { cleanedContent, extractedJson } = sanitizeAssistantContent(
+      completion.content
+    );
+
+    let conversaEncerrada = false;
+    let qualificacao: Record<string, unknown> | null = null;
+
+    if (completion.toolCall && completion.toolCall.name === TOOL_NAME) {
+      qualificacao = completion.toolCall.args;
+      conversaEncerrada = true;
+    } else if (extractedJson) {
+      console.warn(
+        "[POST /api/chat] modelo emitiu JSON em texto apesar de ter tool disponível — usando fallback"
+      );
+      qualificacao = extractedJson;
+      conversaEncerrada = true;
+    }
+
+    const finalContent =
+      cleanedContent ||
+      (conversaEncerrada
+        ? "Perfeito! As informações foram registradas e serão encaminhadas para nossa equipe de analistas. Em aproximadamente 48 horas entraremos em contato para apresentar a proposta personalizada. Obrigado pela conversa!"
+        : "");
+
     await db.insert(mensagens).values([
       { leadId, role: "user", conteudo: message.trim() },
-      { leadId, role: "assistant", conteudo: response },
+      { leadId, role: "assistant", conteudo: finalContent },
     ]);
 
-    // Detect JSON summary — strip JSON from response and hide it from the chat UI
-    const detection = extractClosingMessage(response);
-    if (detection.found) {
-      await db.update(leads).set({ encerrada: true }).where(eq(leads.id, leadId));
+    if (conversaEncerrada) {
+      await db
+        .update(leads)
+        .set({
+          encerrada: true,
+          ...(qualificacao ? { jsonQualificacao: qualificacao } : {}),
+        })
+        .where(eq(leads.id, leadId));
+
       return NextResponse.json({
-        response: detection.closingText,
+        response: finalContent,
         conversaEncerrada: true,
       });
     }
 
-    return NextResponse.json({ response });
+    return NextResponse.json({ response: finalContent });
   } catch (err) {
     console.error("[POST /api/chat]", err);
     return NextResponse.json(

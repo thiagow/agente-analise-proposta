@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import { Star, Send, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import { cn } from "@/lib/utils";
 import type { Lead } from "@/lib/db/schema";
 import type { ProjectType } from "@/lib/prompts";
@@ -29,27 +32,100 @@ const WELCOME = `Olá! Sou a IA da Tech Hive. Estou aqui para entender melhor o 
 
 Para começar, qual é o tipo de projeto que você tem em mente?`;
 
+// Camada B do plano: strip de JSON em mensagens já persistidas, caso uma conversa anterior
+// (pré-tool-calling) tenha gravado JSON misturado no conteúdo do assistente.
 function extractClosingText(content: string): string | null {
   const trimmed = content.trim();
+  if (!trimmed) return null;
 
-  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    try { JSON.parse(trimmed); return null; } catch { /* continua */ }
+  const isJsonObject = (raw: string): boolean => {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed);
+    } catch {
+      return false;
+    }
+  };
+
+  if (trimmed.startsWith("{") && trimmed.endsWith("}") && isJsonObject(trimmed)) {
+    return null;
   }
 
   const pureBlock = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  if (pureBlock) {
-    try { JSON.parse(pureBlock[1]); return null; } catch { /* continua */ }
-  }
+  if (pureBlock && isJsonObject(pureBlock[1])) return null;
 
   const mixed = trimmed.match(/^([\s\S]*?)```(?:json)?\s*(\{[\s\S]*?\})\s*```\s*$/);
-  if (mixed) {
-    try {
-      JSON.parse(mixed[2]);
-      return mixed[1].trim() || null;
-    } catch { /* continua */ }
+  if (mixed && isJsonObject(mixed[2])) {
+    return mixed[1].trim() || null;
+  }
+
+  // Heurística: JSON inline ao final
+  const lastBrace = trimmed.lastIndexOf("{");
+  if (lastBrace >= 0) {
+    const tail = trimmed.slice(lastBrace);
+    if (tail.trim().endsWith("}") && isJsonObject(tail)) {
+      const head = trimmed.slice(0, lastBrace).trim();
+      return head || null;
+    }
   }
 
   return content;
+}
+
+function MarkdownMessage({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSanitize]}
+      components={{
+        p: ({ children }) => (
+          <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>
+        ),
+        strong: ({ children }) => (
+          <strong className="font-semibold text-hive-text">{children}</strong>
+        ),
+        em: ({ children }) => <em className="italic">{children}</em>,
+        ul: ({ children }) => (
+          <ul className="list-disc pl-5 space-y-1 mb-2">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal pl-5 space-y-1 mb-2">{children}</ol>
+        ),
+        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-hive-purple underline hover:opacity-80"
+          >
+            {children}
+          </a>
+        ),
+        code: ({ children }) => (
+          <code className="px-1 py-0.5 rounded bg-white/5 text-xs">
+            {children}
+          </code>
+        ),
+        h1: ({ children }) => (
+          <h1 className="text-base font-semibold mb-2 mt-1">{children}</h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="text-sm font-semibold mb-2 mt-1">{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="text-sm font-semibold mb-2 mt-1">{children}</h3>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-2 border-hive-border pl-3 italic opacity-90">
+            {children}
+          </blockquote>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 export default function ChatClient({ lead, historicoInicial }: Props) {
@@ -64,9 +140,6 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
   );
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tipoProjeto, setTipoProjeto] = useState<ProjectType | null>(
-    lead.tipoProjeto as ProjectType | null
-  );
   const [projectSelected, setProjectSelected] = useState(
     historicoInicial.length > 0 || !!lead.tipoProjeto
   );
@@ -135,7 +208,6 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
   }
 
   async function handleProjectSelect(tipo: ProjectType, label: string) {
-    setTipoProjeto(tipo);
     setProjectSelected(true);
     await sendMessage(`Meu projeto é um ${label}.`, tipo);
   }
@@ -198,13 +270,17 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
               )}
               <div
                 className={cn(
-                  "max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap",
+                  "max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed",
                   msg.role === "user"
-                    ? "gradient-brand text-white rounded-tr-sm"
+                    ? "gradient-brand text-white rounded-tr-sm whitespace-pre-wrap"
                     : "bg-hive-surface border border-hive-border text-hive-text rounded-tl-sm"
                 )}
               >
-                {msg.content}
+                {msg.role === "assistant" ? (
+                  <MarkdownMessage content={msg.content} />
+                ) : (
+                  msg.content
+                )}
               </div>
             </div>
           ))}
