@@ -25,6 +25,23 @@ export async function GET() {
   }
 }
 
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { tipo } = body as { tipo: string };
+
+    if (!tipo || !ALL_TIPOS.includes(tipo as keyof typeof SYSTEM_PROMPTS)) {
+      return NextResponse.json({ error: "tipo inválido" }, { status: 400 });
+    }
+
+    await db.delete(prompts).where(eq(prompts.tipo, tipo));
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[DELETE /api/admin/prompts]", err);
+    return NextResponse.json({ error: "Erro ao resetar prompt" }, { status: 500 });
+  }
+}
+
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();

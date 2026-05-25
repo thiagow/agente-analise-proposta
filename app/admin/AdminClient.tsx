@@ -13,6 +13,7 @@ import {
   Save,
   LogOut,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -458,6 +459,7 @@ function PromptsTab() {
   const [editado, setEditado] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [resetting, setResetting] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -471,6 +473,35 @@ function PromptsTab() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  async function resetar(tipo: string) {
+    if (
+      !confirm(
+        `Resetar o prompt "${TIPO_LABELS[tipo] || tipo}" para o padrão do arquivo? A versão customizada será descartada.`
+      )
+    )
+      return;
+    setResetting(tipo);
+    try {
+      const res = await fetch("/api/admin/prompts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo }),
+      });
+      if (!res.ok) throw new Error();
+      const refreshed: PromptRow[] = await fetch("/api/admin/prompts").then((r) =>
+        r.json()
+      );
+      setPromptsList(refreshed);
+      const inicial: Record<string, string> = {};
+      for (const p of refreshed) inicial[p.tipo] = p.conteudo;
+      setEditado(inicial);
+    } catch {
+      alert("Erro ao resetar prompt.");
+    } finally {
+      setResetting(null);
+    }
+  }
 
   async function salvar(tipo: string) {
     setSaving(tipo);
@@ -516,6 +547,7 @@ function PromptsTab() {
           const isDirty = editado[prompt.tipo] !== prompt.conteudo;
           const isSaving = saving === prompt.tipo;
           const isSaved = saved === prompt.tipo;
+          const isResetting = resetting === prompt.tipo;
 
           return (
             <div
@@ -537,9 +569,24 @@ function PromptsTab() {
                     </span>
                   )}
                 </div>
+                <div className="flex items-center gap-2">
+                {prompt.customizado && (
+                  <button
+                    onClick={() => resetar(prompt.tipo)}
+                    disabled={isResetting || isSaving}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-hive-surface-2 text-hive-muted border border-hive-border hover:text-hive-text hover:border-hive-purple/50 transition disabled:opacity-50"
+                  >
+                    {isResetting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-4 h-4" />
+                    )}
+                    Resetar para padrão
+                  </button>
+                )}
                 <button
                   onClick={() => salvar(prompt.tipo)}
-                  disabled={isSaving || (!isDirty && !isSaved)}
+                  disabled={isSaving || isResetting || (!isDirty && !isSaved)}
                   className={cn(
                     "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition",
                     isSaved
@@ -558,6 +605,7 @@ function PromptsTab() {
                   )}
                   {isSaved ? "Salvo!" : "Salvar"}
                 </button>
+                </div>
               </div>
 
               <textarea
