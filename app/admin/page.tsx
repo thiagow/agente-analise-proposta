@@ -28,7 +28,11 @@ async function getLeads() {
 }
 
 export default async function AdminPage() {
-  const leadsData = await getLeads();
+  const rows = await getLeads();
+  const leadsData = rows.map((r) => ({
+    ...r,
+    criadoEm: r.criadoEm.toISOString(),
+  }));
 
   return <AdminClient leads={leadsData} />;
 }
