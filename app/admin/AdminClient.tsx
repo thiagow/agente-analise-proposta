@@ -27,6 +27,7 @@ interface LeadRow {
   whatsapp: string;
   email: string;
   tipoProjeto: string | null;
+  encerrada: boolean;
   criadoEm: string;
   totalMensagens: number;
   temArquivo: boolean;
@@ -255,13 +256,20 @@ function LeadsTab({ leads: initialLeads }: { leads: LeadRow[] }) {
                     <td className="px-4 py-3 text-hive-muted whitespace-nowrap">{lead.whatsapp}</td>
                     <td className="px-4 py-3 text-hive-muted whitespace-nowrap">{lead.email}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {lead.tipoProjeto ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-hive-purple/10 text-hive-purple text-xs font-medium border border-hive-purple/20">
-                          {TIPO_LABELS[lead.tipoProjeto]?.replace(/^\S+\s/, "") || lead.tipoProjeto}
-                        </span>
-                      ) : (
-                        <span className="text-hive-muted">—</span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {lead.tipoProjeto ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md bg-hive-purple/10 text-hive-purple text-xs font-medium border border-hive-purple/20">
+                            {TIPO_LABELS[lead.tipoProjeto]?.replace(/^\S+\s/, "") || lead.tipoProjeto}
+                          </span>
+                        ) : (
+                          <span className="text-hive-muted">—</span>
+                        )}
+                        {lead.encerrada && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20">
+                            ✓ Qualificado
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-hive-muted text-center">{lead.totalMensagens}</td>
                     <td className="px-4 py-3 text-center">

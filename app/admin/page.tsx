@@ -1,24 +1,34 @@
+import { sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { leads, mensagens, arquivos } from "@/lib/db/schema";
 import { AdminClient } from "./AdminClient";
 
 export const dynamic = "force-dynamic";
 
 async function getLeads() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
-
-  const res = await fetch(`${baseUrl}/api/admin/leads`, {
-    cache: "no-store",
-  });
-
-  if (!res.ok) return [];
-  return res.json();
+  return db
+    .select({
+      id: leads.id,
+      nome: leads.nome,
+      cargo: leads.cargo,
+      empresa: leads.empresa,
+      whatsapp: leads.whatsapp,
+      email: leads.email,
+      tipoProjeto: leads.tipoProjeto,
+      encerrada: leads.encerrada,
+      criadoEm: leads.criadoEm,
+      totalMensagens: sql<number>`count(distinct ${mensagens.id})`.as("total_mensagens"),
+      temArquivo: sql<boolean>`max(${arquivos.id}) is not null`.as("tem_arquivo"),
+    })
+    .from(leads)
+    .leftJoin(mensagens, sql`${mensagens.leadId} = ${leads.id}`)
+    .leftJoin(arquivos, sql`${arquivos.leadId} = ${leads.id}`)
+    .groupBy(leads.id)
+    .orderBy(sql`${leads.criadoEm} desc`);
 }
 
 export default async function AdminPage() {
-  const leads = await getLeads();
+  const leadsData = await getLeads();
 
-  return <AdminClient leads={leads} />;
+  return <AdminClient leads={leadsData} />;
 }
