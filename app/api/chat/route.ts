@@ -80,6 +80,21 @@ function looksLikeQualification(obj: Record<string, unknown>): boolean {
   );
 }
 
+// Camada C — detecção textual canônica da despedida.
+// Baseada no texto literal do prompt; específica o suficiente para evitar falso positivo.
+const CLOSING_PATTERN =
+  /informa[çc][õo]es foram registradas[\s\S]*equipe de analistas[\s\S]*48 horas/i;
+
+function detectClosingMessage(content: string): boolean {
+  if (!content) return false;
+  return CLOSING_PATTERN.test(content);
+}
+
+// Gate: só ativa Camada C quando a conversa já avançou (evita falso positivo cedo).
+function isLateInConversation(historicoLength: number): boolean {
+  return historicoLength >= 10;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -164,14 +179,39 @@ export async function POST(req: NextRequest) {
     let qualificacao: Record<string, unknown> | null = null;
 
     if (completion.toolCall && completion.toolCall.name === TOOL_NAME) {
+      // Camada A — tool call oficial
       qualificacao = completion.toolCall.args;
       conversaEncerrada = true;
     } else if (extractedJson) {
-      console.warn(
-        "[POST /api/chat] modelo emitiu JSON em texto apesar de ter tool disponível — usando fallback"
-      );
+      // Camada B — JSON em texto (fallback de leakage)
+      console.warn("[chat] modelo emitiu JSON em texto — usando fallback B");
       qualificacao = extractedJson;
       conversaEncerrada = true;
+    } else if (
+      detectClosingMessage(completion.content) &&
+      isLateInConversation(historico.length)
+    ) {
+      // Camada C — despedida sem tool call; força encerramento
+      console.warn("[chat] despedida sem tool — ativando Camada C");
+      conversaEncerrada = true;
+
+      // Camada D — segundo chamado forçando tool para recuperar dados estruturados
+      if (tools && tools.length > 0) {
+        try {
+          const forced = await chatCompletionRich(
+            [...messages, { role: "assistant", content: completion.content }],
+            { tools, forceTool: TOOL_NAME, maxTokens: 800 }
+          );
+          if (forced.toolCall?.name === TOOL_NAME) {
+            qualificacao = forced.toolCall.args;
+            console.log("[chat] Camada D recuperou tool call com sucesso");
+          }
+        } catch (err) {
+          console.warn(
+            `[chat] Camada D falhou: ${(err as Error).message.slice(0, 200)} — encerrando sem JSON`
+          );
+        }
+      }
     }
 
     const finalContent =

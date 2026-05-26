@@ -61,9 +61,10 @@ export async function chatCompletionRich(
   opts: {
     maxTokens?: number;
     tools?: OpenAITool[];
+    forceTool?: string;
   } = {}
 ): Promise<CompletionResult> {
-  const { maxTokens = 600, tools } = opts;
+  const { maxTokens = 600, tools, forceTool } = opts;
   const config = PROVIDER_CONFIGS[PROVIDER];
 
   const modelsEnv =
@@ -77,7 +78,7 @@ export async function chatCompletionRich(
 
   for (const model of models) {
     try {
-      const result = await tryOnce(config, model, messages, maxTokens, tools);
+      const result = await tryOnce(config, model, messages, maxTokens, tools, forceTool);
       if (result && (result.content.length > 0 || result.toolCall)) {
         console.log(`[chatCompletion] usou modelo: ${model}`);
         return result;
@@ -120,7 +121,8 @@ async function tryOnce(
   model: string,
   messages: Message[],
   maxTokens: number,
-  tools?: OpenAITool[]
+  tools?: OpenAITool[],
+  forceTool?: string
 ): Promise<CompletionResult | null> {
   const body: Record<string, unknown> = {
     model,
@@ -130,7 +132,9 @@ async function tryOnce(
 
   if (tools && tools.length > 0) {
     body.tools = tools;
-    body.tool_choice = "auto";
+    body.tool_choice = forceTool
+      ? { type: "function", function: { name: forceTool } }
+      : "auto";
   }
 
   const res = await fetch(config.baseUrl, {
@@ -148,7 +152,7 @@ async function tryOnce(
     const retryAfter = errBody?.error?.metadata?.retry_after_seconds;
     if (typeof retryAfter === "number" && retryAfter <= 8) {
       await sleep(Math.ceil(retryAfter) * 1000 + 500);
-      return tryOnce(config, model, messages, maxTokens, tools);
+      return tryOnce(config, model, messages, maxTokens, tools, forceTool);
     }
     throw new Error(`429 (retry ${retryAfter ?? "?"}s)`);
   }
