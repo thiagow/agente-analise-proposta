@@ -152,7 +152,30 @@ export async function POST(req: NextRequest) {
 
     const messages: Message[] = [{ role: "system", content: systemPrompt }];
 
-    if (arquivo?.textoExtraido) {
+    if (lead.analiseDocumento) {
+      messages.push({
+        role: "system",
+        content: `## ANÁLISE PRÉVIA DO DOCUMENTO
+
+O lead anexou um briefing que JÁ FOI analisado e estruturado:
+
+${JSON.stringify(lead.analiseDocumento, null, 2)}
+
+## COMO USAR ESTA ANÁLISE
+
+**IMPORTANTE — a abertura confirmatória JÁ FOI ENVIADA antes desta conversa começar.** Você verá ela como a primeira mensagem do assistente no histórico. A primeira mensagem do usuário é uma resposta a essa confirmação.
+
+REGRAS:
+1. **NÃO envie a ABERTURA padrão do prompt.** Ela seria redundante — a confirmação já foi feita.
+2. Se o lead confirmou que o resumo está correto ("sim", "está certo", "perfeito"), considere todos os campos em "campos_identificados" como VALIDADOS e prossiga direto para os "gaps".
+3. Se o lead corrigiu algo, ajuste mentalmente o entendimento e continue para os "gaps".
+4. **Pule TODAS as fases cujos campos já estão em "campos_identificados".** Não pergunte de novo o que já está claro.
+5. Foque exclusivamente nos itens listados em "gaps" — esses são os que faltam.
+6. Mantenha tom natural — não enumere os gaps, faça as perguntas de forma fluida.
+7. No ENCERRAMENTO (tool call submit_qualified_lead), combine "campos_identificados" + respostas coletadas no chat para preencher TODOS os campos do schema.`,
+      });
+    } else if (arquivo?.textoExtraido) {
+      // Fallback: PDF existe mas análise estruturada falhou
       messages.push({
         role: "system",
         content: `Documentação do projeto fornecida pelo cliente:\n\n${arquivo.textoExtraido}`,

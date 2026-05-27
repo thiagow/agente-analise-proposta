@@ -19,6 +19,7 @@ export const leads = pgTable("leads", {
   tipoProjeto: varchar("tipo_projeto", { length: 50 }),
   encerrada: boolean("encerrada").default(false).notNull(),
   jsonQualificacao: jsonb("json_qualificacao"),
+  analiseDocumento: jsonb("analise_documento"),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 

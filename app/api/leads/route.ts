@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { leads, arquivos } from "@/lib/db/schema";
+import { leads, arquivos, mensagens } from "@/lib/db/schema";
 import { extractPdfText } from "@/lib/pdf";
+import { analisarBriefing, montarAberturaContextual } from "@/lib/analise-pdf";
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,6 +52,27 @@ export async function POST(req: NextRequest) {
         nomeArquivo: pdfFile.name,
         textoExtraido,
       });
+
+      // Análise estruturada do briefing — classifica tipo e extrai campos.
+      // Falha gracioso: se a análise não rolar, lead segue fluxo padrão.
+      const analise = await analisarBriefing(textoExtraido);
+      if (analise) {
+        await db
+          .update(leads)
+          .set({
+            tipoProjeto: analise.tipo,
+            analiseDocumento: analise,
+          })
+          .where(eq(leads.id, lead.id));
+
+        // Salva a abertura contextual como primeira mensagem do assistente,
+        // para que o chat já abra com ela visível (sem precisar de round-trip).
+        await db.insert(mensagens).values({
+          leadId: lead.id,
+          role: "assistant",
+          conteudo: montarAberturaContextual(analise),
+        });
+      }
     }
 
     return NextResponse.json({ leadId: lead.id });

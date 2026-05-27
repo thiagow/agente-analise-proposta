@@ -310,3 +310,65 @@ export const TOOLS: Record<ProjectType, OpenAITool[]> = {
 };
 
 export const TOOL_NAME = "submit_qualified_lead";
+
+// Tool dedicada para análise prévia do briefing (PDF anexado pelo lead).
+// Usada antes do chat abrir, para classificar tipo de projeto e extrair
+// informações estruturadas que vão pular perguntas óbvias no chat.
+export const ANALYZE_BRIEFING_TOOL_NAME = "analyze_briefing";
+
+export const ANALYZE_BRIEFING_TOOL: OpenAITool = {
+  type: "function",
+  function: {
+    name: ANALYZE_BRIEFING_TOOL_NAME,
+    description:
+      "Analisa um briefing/documento de projeto fornecido pelo lead. " +
+      "Classifica o tipo de projeto e extrai informações estruturadas. " +
+      "Esta é a ÚNICA forma de retornar a análise — não escreva JSON em texto.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "tipo",
+        "projeto",
+        "objetivo",
+        "resumo_curto",
+        "campos_identificados",
+        "gaps",
+      ],
+      properties: {
+        tipo: {
+          type: "string",
+          enum: ["webApp", "mobileApp", "automacao", "agente"],
+          description:
+            "Classificação do tipo de projeto. webApp = sistema web. mobileApp = app de celular. automacao = automação de processos com IA. agente = chatbot/agente conversacional de IA.",
+        },
+        projeto: {
+          type: "string",
+          description: "Nome do projeto. Se não estiver no documento, infira algo descritivo.",
+        },
+        objetivo: {
+          type: "string",
+          description: "1-2 frases descrevendo o que o sistema faz.",
+        },
+        resumo_curto: {
+          type: "string",
+          description:
+            "2-3 linhas que serão usadas na abertura do chat para confirmar o entendimento. Linguagem natural, em primeira pessoa do agente.",
+        },
+        campos_identificados: {
+          type: "object",
+          description:
+            "Mapa de campo→valor para informações identificadas no documento. Use as chaves do schema submit_qualified_lead correspondente ao tipo. Inclua APENAS campos cujo valor está claro no documento — não invente.",
+          additionalProperties: true,
+        },
+        gaps: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Lista de informações que faltam ou estão ambíguas no documento e que o agente precisa perguntar. Use linguagem do dia a dia, não nomes técnicos de campo.",
+        },
+      },
+    },
+  },
+};
+
