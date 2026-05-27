@@ -1,3 +1,5 @@
+import path from "path";
+
 const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function extractPdfText(buffer: Buffer): Promise<string> {
@@ -6,12 +8,16 @@ export async function extractPdfText(buffer: Buffer): Promise<string> {
   }
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore — subpath sem declaração de tipos; tipos disponíveis via pdfjs-dist/types
+  // @ts-ignore — subpath sem declaração de tipos no pdfjs-dist v5
   const { getDocument, GlobalWorkerOptions } = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-  // Em Node.js serverless não há worker thread de browser.
-  // workerSrc vazio faz o pdfjs processar na mesma thread (FakeWorker).
-  GlobalWorkerOptions.workerSrc = "";
+  // pdfjs-dist v5 requer workerSrc explícito — aponta para o worker local.
+  // Em serverless (Netlify), o pdfjs-dist é external, então node_modules existe.
+  const workerPath = path.resolve(
+    process.cwd(),
+    "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"
+  );
+  GlobalWorkerOptions.workerSrc = `file://${workerPath}`;
 
   const uint8Array = new Uint8Array(buffer);
   const pdf = await getDocument({
