@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import MetaPixel from "./components/MetaPixel";
 
 export const metadata: Metadata = {
   title: "Tech Hive — Software sob medida para o seu negócio",
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className="antialiased bg-hive-bg text-hive-text min-h-screen">
+        <MetaPixel />
         {children}
       </body>
     </html>
