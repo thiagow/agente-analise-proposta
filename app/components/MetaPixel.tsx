@@ -2,9 +2,27 @@
 
 import Script from "next/script";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 export default function MetaPixel() {
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname.startsWith("/admin")) return;
+
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      if (pathname === "/formulario") {
+        (window as any).fbq("track", "AcessouFormulario");
+      } else if (pathname === "/") {
+        (window as any).fbq("track", "InicioAgenteAnalista");
+      } else if (pathname.startsWith("/chat/")) {
+        (window as any).fbq("track", "Lead", {
+          content_name: "Formulario Qualificacao IA",
+          status: "Sucesso",
+        });
+      }
+    }
+  }, [pathname]);
 
   if (pathname.startsWith("/admin")) return null;
 
