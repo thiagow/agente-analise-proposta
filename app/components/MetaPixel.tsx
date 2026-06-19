@@ -22,7 +22,7 @@ export default function MetaPixel() {
           'https://connect.facebook.net/en_US/fbevents.js');
           fbq('init', '885762810795367');
           fbq('track', 'PageView');
-          ${pathname === "/" ? "fbq('track', 'ViewContent');" : ""}
+          ${pathname === "/" ? "fbq('trackCustom', 'InicioAgenteAnalista');" : ""}
           ${pathname === "/formulario" ? "fbq('trackCustom', 'AcessouFormulario');" : ""}
           ${pathname.startsWith("/chat/") ? "fbq('track', 'Lead', { content_name: 'Formulario Qualificacao IA', status: 'Sucesso' });" : ""}
         `}
