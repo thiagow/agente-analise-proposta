@@ -85,6 +85,12 @@ export default function FormularioPage() {
         return;
       }
 
+      if (typeof window !== "undefined" && (window as any).fbq) {
+        (window as any).fbq("track", "EnviouFormulario", {
+          content_name: "Formulario Qualificacao IA",
+        });
+      }
+
       router.push(`/chat/${data.leadId}`);
     } catch {
       setError("Erro de conexão. Tente novamente.");
