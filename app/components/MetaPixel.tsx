@@ -15,11 +15,6 @@ export default function MetaPixel() {
         (window as any).fbq("track", "AcessouFormulario");
       } else if (pathname === "/") {
         (window as any).fbq("track", "InicioAgenteAnalista");
-      } else if (pathname.startsWith("/chat/")) {
-        (window as any).fbq("track", "Lead", {
-          content_name: "Formulario Qualificacao IA",
-          status: "Sucesso",
-        });
       }
     }
   }, [pathname]);
@@ -42,7 +37,6 @@ export default function MetaPixel() {
           fbq('track', 'PageView');
           ${pathname === "/" ? "fbq('track', 'InicioAgenteAnalista');" : ""}
           ${pathname === "/formulario" ? "fbq('track', 'AcessouFormulario');" : ""}
-          ${pathname.startsWith("/chat/") ? "fbq('track', 'Lead', { content_name: 'Formulario Qualificacao IA', status: 'Sucesso' });" : ""}
         `}
       </Script>
       <noscript>

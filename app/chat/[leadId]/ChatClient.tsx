@@ -189,6 +189,12 @@ export default function ChatClient({ lead, historicoInicial }: Props) {
           ]);
         }
         setConversaEncerrada(true);
+        if (typeof window !== "undefined" && (window as any).fbq) {
+          (window as any).fbq("track", "Lead", {
+            content_name: "Formulario Qualificacao IA",
+            status: "Sucesso",
+          });
+        }
         return;
       }
 
